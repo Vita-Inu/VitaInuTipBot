@@ -1,0 +1,75 @@
+pragma soliditypp ^0.4.2;
+
+contract tipBotDB {
+    mapping(string => mapping(tokenId => uint256)) balances;
+
+    mapping(string => mapping(tokenId => uint256)) totalDepositsOfUser;
+    mapping(string => mapping(tokenId => uint256)) totalWithdrawsOfUser;
+    mapping(string => uint256) totalTipCountOfUser;
+    mapping(string => mapping(tokenId => uint256)) totalTipsOfUser;
+
+    address owner;
+
+    event api_deposit(string _userId, uint256 _value);
+    event api_tip(string _senderUserId, string _targetUserId, tokenId _token, uint256 _value);
+    event api_withdraw(string _userId, address _wallet, tokenId _token, uint256 _value);
+
+    constructor() public {
+      owner = msg.sender;
+    }
+
+    getter getBalance(string calldata _userId, tokenId _token) returns(uint256) {
+      return balances[_userId][_token];
+    }
+
+    getter getOwner() returns(address) {
+      return owner;
+    }
+
+    getter getTotalTipCountOfUser(string calldata _userId) returns(uint256) {
+      return totalTipCountOfUser[_userId];
+    }
+
+    getter getTotalTipsOfUser(string calldata _userId, tokenId _token) returns(uint256) {
+      return totalTipsOfUser[_userId][_token];
+    }
+
+    getter getTotalWithdrawsOfUser(string calldata _userId, tokenId _token) returns(uint256) {
+      return totalWithdrawsOfUser[_userId][_token];
+    }
+
+    getter getTotalDepositsOfUser(string calldata _userId, tokenId _token) returns(uint256) {
+      return totalDepositsOfUser[_userId][_token];
+    }
+
+    onMessage changeOwner(address _newOwner) {
+      require(msg.sender == owner);
+      owner = _newOwner;
+    }
+
+    onMessage deposit(string calldata _userId) payable {
+      balances[_userId][msg.tokenid] += msg.amount;
+      totalDepositsOfUser[_userId][msg.tokenid] += msg.amount;
+      emit api_deposit(_userId, msg.amount);
+    }
+
+    onMessage tip(string calldata _senderUserId, string calldata _targetUserId, tokenId _token, uint256 _value) {
+      require(msg.sender == owner);
+      require(_value > 0);
+      require(balances[_senderUserId][_token] >= _value);
+      balances[_senderUserId][_token] -= _value;
+      balances[_targetUserId][_token] += _value;
+      totalTipCountOfUser[_senderUserId] += 1;
+      totalTipsOfUser[_senderUserId][_token] += _value;
+      emit api_tip(_senderUserId, _targetUserId, _token, _value);
+    }
+
+    onMessage withdraw(string calldata _userId, address _wallet, tokenId _token, uint256 _value) {
+      require(msg.sender == owner);
+      require(balances[_userId][_token] >= _value);
+      balances[_userId][_token] -= _value;
+      _wallet.transfer(_token, _value);
+      totalWithdrawsOfUser[_userId][_token] += _value;
+      emit api_withdraw(_userId, _wallet, _token, _value);
+    }
+}
