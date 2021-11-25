@@ -1,4 +1,13 @@
 {
+  "name": "VitaInuTipBot",
+  "author": "ViNo Community",
+  "version": "1.0.0",
+  "description": "Vita Inu themed Vite tip bot for Twitter",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "start": "node index.js"
+  },
   "dependencies": {
     "@vite/vitejs": "^2.3.16",
     "@vite/vitejs-ws": "^2.3.16",
